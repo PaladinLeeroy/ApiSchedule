@@ -7,12 +7,12 @@ build:
     - pip install -r requirements.txt
 
 run:
-  command: gunicorn -c gunicorn.conf.py app.main:app
+  command: python timeweb_app.py
   port: 8000
 
 env:
   - name: SECRET_KEY
-    value: "your-super-secret-key-change-this-in-production"
+    value: "your-super-secret-key-change-this-in-production-2024"
   - name: ALGORITHM
     value: "HS256"
   - name: ACCESS_TOKEN_EXPIRE_MINUTES
