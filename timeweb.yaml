@@ -1,0 +1,33 @@
+name: schedule-management-system
+runtime: python
+version: "3.9"
+
+build:
+  commands:
+    - pip install -r requirements.txt
+
+run:
+  command: gunicorn -c gunicorn.conf.py app.main:app
+  port: 8000
+
+env:
+  - name: SECRET_KEY
+    value: "your-super-secret-key-change-this-in-production"
+  - name: ALGORITHM
+    value: "HS256"
+  - name: ACCESS_TOKEN_EXPIRE_MINUTES
+    value: "30"
+  - name: ENVIRONMENT
+    value: "production"
+  - name: HOST
+    value: "0.0.0.0"
+  - name: PORT
+    value: "8000"
+  - name: DEBUG
+    value: "False"
+
+# Для SQLite (временное решение)
+# DATABASE_URL будет настроен через панель управления
+
+# Для PostgreSQL (рекомендуется для продакшена)
+# DATABASE_URL: postgresql://username:password@host:port/database 
