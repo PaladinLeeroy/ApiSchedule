@@ -202,7 +202,10 @@ WantedBy=multi-user.target
 ### Аутентификация
 - `POST /api/token` - Получение JWT токена
 - `POST /api/register` - Регистрация пользователя
+
+### Пользователи
 - `GET /api/users/me` - Информация о текущем пользователе
+- `GET /api/users` - Список пользователей (только админ)
 
 ### Группы
 - `GET /api/groups` - Список групп
@@ -216,28 +219,44 @@ WantedBy=multi-user.target
 - `PUT /api/teachers/{id}` - Обновление преподавателя
 - `DELETE /api/teachers/{id}` - Удаление преподавателя
 
+### Предметы
+- `GET /api/lessons` - Список предметов
+- `POST /api/lessons` - Создание предмета
+- `PUT /api/lessons/{id}` - Обновление предмета
+- `DELETE /api/lessons/{id}` - Удаление предмета
+
+### Кабинеты
+- `GET /api/rooms` - Список кабинетов
+- `POST /api/rooms` - Создание кабинета
+- `PUT /api/rooms/{id}` - Обновление кабинета
+- `DELETE /api/rooms/{id}` - Удаление кабинета
+
 ### Расписания
-- `GET /api/schedule-templates` - Список шаблонов расписаний
-- `POST /api/schedule-template` - Создание шаблона
-- `GET /api/schedule-templates/{id}/export_excel` - Экспорт в Excel
-- `GET /api/schedule-templates/{id}/export_pdf` - Экспорт в PDF
+- `GET /api/schedules` - Список расписаний
+- `POST /api/schedules` - Создание расписания
+- `PUT /api/schedules/{id}` - Обновление расписания
+- `DELETE /api/schedules/{id}` - Удаление расписания
+- `GET /api/schedules/{id}/export/excel` - Экспорт в Excel
+- `GET /api/schedules/{id}/export/pdf` - Экспорт в PDF
 
-## Безопасность
+### ToDo
+- `GET /api/todos` - Список задач пользователя
+- `POST /api/todos` - Создание задачи
+- `PUT /api/todos/{id}` - Обновление задачи
+- `DELETE /api/todos/{id}` - Удаление задачи
 
-1. **Обязательно измените SECRET_KEY** в продакшене
-2. Используйте HTTPS в продакшене
-3. Настройте CORS для вашего домена
-4. Регулярно обновляйте зависимости
-5. Используйте сильные пароли
+## Вклад в проект
 
-## Поддержка
-
-При возникновении проблем:
-1. Проверьте логи приложения
-2. Убедитесь, что все зависимости установлены
-3. Проверьте настройки базы данных
-4. Убедитесь, что порт 8000 свободен
+1. Форкните репозиторий
+2. Создайте ветку для новой функции (`git checkout -b feature/amazing-feature`)
+3. Зафиксируйте изменения (`git commit -m 'Add some amazing feature'`)
+4. Отправьте в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
 
 ## Лицензия
 
-MIT License 
+Этот проект распространяется под лицензией MIT. См. файл `LICENSE` для получения дополнительной информации.
+
+## Поддержка
+
+Если у вас есть вопросы или проблемы, создайте issue в репозитории.
