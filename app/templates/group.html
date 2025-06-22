@@ -1,0 +1,416 @@
+{% include 'header.html' %}
+
+<!-- Добавляем Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+{% block content %}
+<div class="container mt-4">
+    <a href="/" class="btn btn-info mb-3 text-white">На главную</a>
+    <h2>Управление учебными группами</h2>
+    
+    <!-- Форма добавления новой группы -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Добавить новую группу</h5>
+            <form id="addGroupForm">
+                <div class="mb-3">
+                    <label for="groupName" class="form-label">Название группы:</label>
+                    <input type="text" class="form-control" id="groupName" placeholder="Например: Б21-781-51" required>
+                </div>
+                <div class="mb-3">
+                    <label for="groupType" class="form-label">Тип группы:</label>
+                    <select class="form-select" id="groupType" required>
+                        <option value="" selected>Выбрать тип группы</option>
+                        <option value="Очное">Очное</option>
+                        <option value="Заочное">Заочное</option>
+                        <option value="Очно-заочное">Очно-заочное</option>
+                        <option value="Магистратура">Магистратура</option>
+                        <option value="Особая">Особая</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="groupDescription" class="form-label">Описание (необязательно):</label>
+                    <textarea class="form-control" id="groupDescription" rows="2" placeholder="Например: Группа по направлению Информационные системы"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить группу</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблица групп -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Список групп</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Название</th>
+                            <th>Описание</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupsTableBody">
+                        <!-- Здесь будут отображаться группы -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div class="modal fade" id="editGroupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать группу</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editGroupForm">
+                    <input type="hidden" id="editGroupId">
+                    <div class="mb-3">
+                        <label for="editGroupName" class="form-label">Название группы:</label>
+                        <input type="text" class="form-control" id="editGroupName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGroupType" class="form-label">Тип группы:</label>
+                        <select class="form-select" id="editGroupType" required>
+                            <option value="Очное">Очное</option>
+                            <option value="Заочное">Заочное</option>
+                            <option value="Очно-заочное">Очно-заочное</option>
+                            <option value="Магистратура">Магистратура</option>
+                            <option value="Особая">Особая</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editGroupDescription" class="form-label">Описание:</label>
+                        <textarea class="form-control" id="editGroupDescription" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveGroupEdit">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .group-type-header {
+        background-color: #e9ecef;
+        color: #495057;
+        font-weight: bold;
+        padding: 12px;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #dee2e6;
+        animation: fadeIn 0.5s;
+    }
+    .group-row {
+        background-color: white;
+    }
+    .group-row:hover {
+        background-color: #f8f9fa;
+    }
+    .table th {
+        width: 33.33%;
+        padding: 12px;
+    }
+    .table td {
+        padding: 12px;
+        vertical-align: middle;
+    }
+    .table-responsive {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    .table {
+        margin-bottom: 0;
+    }
+    .card {
+        border-radius: 0.5rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Стили для уведомлений */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 4px;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+    }
+    
+    .toast.success {
+        border-left: 4px solid #28a745;
+    }
+    
+    .toast.error {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast-content {
+        margin-right: 15px;
+    }
+    
+    .toast-close {
+        cursor: pointer;
+        color: #6c757d;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script src="{{ url_for('static', path='js/animations.js') }}"></script>
+<script>
+// Загрузка списка групп
+async function loadGroups() {
+    try {
+        const response = await fetch('/api/groups');
+        const groups = await response.json();
+        const tbody = document.getElementById('groupsTableBody');
+        tbody.innerHTML = '';
+        
+        // Группируем группы по типу
+        const groupsByType = {};
+        groups.forEach(group => {
+            if (!groupsByType[group.type]) {
+                groupsByType[group.type] = [];
+            }
+            groupsByType[group.type].push(group);
+        });
+        
+        // Устанавливаем фиксированный порядок типов групп
+        const groupTypesOrder = ["Очное", "Заочное", "Очно-заочное", "Магистратура", "Особая"];
+        
+        // Создаем таблицу с подзаголовками для каждого типа
+        groupTypesOrder.forEach(type => {
+            // Пропускаем типы, для которых нет групп
+            if (!groupsByType[type] || groupsByType[type].length === 0) {
+                return;
+            }
+            
+            // Добавляем заголовок типа группы
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'group-type-header animate__animated animate__fadeIn';
+            headerRow.innerHTML = `<td colspan="3"><i class="fas fa-users me-2"></i>${type}</td>`;
+            tbody.appendChild(headerRow);
+            
+            // Добавляем группы этого типа
+            groupsByType[type].forEach((group, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'group-row animate__animated animate__fadeIn';
+                tr.style.animationDelay = `${index * 0.1}s`;
+                tr.innerHTML = `
+                    <td>${group.name}</td>
+                    <td>${group.description || ''}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-2 edit-group" 
+                                data-id="${group.id}" 
+                                data-name="${group.name}" 
+                                data-type="${group.type}" 
+                                data-description="${group.description || ''}">
+                            Редактировать
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-group" data-id="${group.id}">
+                            Удалить
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                
+                // Добавляем обработчики событий
+                addEventListenersToRow(tr);
+            });
+        });
+    } catch (error) {
+        console.error('Error loading groups:', error);
+        showToast('Ошибка при загрузке списка групп', 'error');
+    }
+}
+
+// Функция для добавления обработчиков событий к строке
+function addEventListenersToRow(row) {
+    const editButton = row.querySelector('.edit-group');
+    const deleteButton = row.querySelector('.delete-group');
+    
+    editButton.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const name = this.getAttribute('data-name');
+        const type = this.getAttribute('data-type');
+        const description = this.getAttribute('data-description');
+        
+        document.getElementById('editGroupId').value = id;
+        document.getElementById('editGroupName').value = name;
+        document.getElementById('editGroupType').value = type;
+        document.getElementById('editGroupDescription').value = description;
+        
+        const modal = new bootstrap.Modal(document.getElementById('editGroupModal'));
+        animateModal(modal, 'show');
+        modal.show();
+    });
+    
+    deleteButton.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        deleteGroup(id);
+    });
+}
+
+// Добавление новой группы
+document.getElementById('addGroupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('groupName').value;
+    const type = document.getElementById('groupType').value;
+    const description = document.getElementById('groupDescription').value;
+
+    try {
+        const response = await fetch('/api/groups', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name,
+                type,
+                description
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast('Группа успешно добавлена');
+            document.getElementById('addGroupForm').reset();
+            loadGroups();
+        } else {
+            showToast(data.detail || 'Ошибка при добавлении группы', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding group:', error);
+        showToast('Ошибка при добавлении группы', 'error');
+    }
+});
+
+// Сохранение изменений группы
+document.getElementById('saveGroupEdit').addEventListener('click', async () => {
+    const id = document.getElementById('editGroupId').value;
+    const name = document.getElementById('editGroupName').value;
+    const type = document.getElementById('editGroupType').value;
+    const description = document.getElementById('editGroupDescription').value;
+
+    try {
+        const response = await fetch(`/api/groups/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name,
+                type,
+                description
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showToast('Группа успешно обновлена');
+            
+            // Анимация обновления строки
+            const row = document.querySelector(`[data-id="${id}"]`).closest('tr');
+            await animateUpdateRow(row);
+            
+            // Обновляем данные в строке
+            row.cells[0].textContent = name;
+            row.cells[1].textContent = description;
+            row.querySelector('.edit-group').setAttribute('data-name', name);
+            row.querySelector('.edit-group').setAttribute('data-type', type);
+            row.querySelector('.edit-group').setAttribute('data-description', description);
+
+            // Проверяем, нужно ли переместить строку в другую группу
+            const currentHeader = row.previousElementSibling;
+            if (currentHeader && currentHeader.classList.contains('group-type-header')) {
+                const currentType = currentHeader.textContent.trim();
+                if (currentType !== type) {
+                    // Находим нужную группу
+                    const targetHeader = Array.from(document.querySelectorAll('.group-type-header'))
+                        .find(header => header.textContent.trim() === type);
+                    
+                    if (targetHeader) {
+                        // Перемещаем строку после заголовка нужной группы
+                        targetHeader.after(row);
+                    }
+                }
+            }
+
+            // Закрываем модальное окно после обновления данных
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editGroupModal'));
+            modal.hide();
+        } else {
+            showToast(data.detail || 'Ошибка при обновлении группы', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating group:', error);
+        showToast('Ошибка при обновлении группы', 'error');
+    }
+});
+
+// Удаление группы
+async function deleteGroup(id) {
+    if (!confirm('Вы уверены, что хотите удалить эту группу?')) {
+        return;
+    }
+    
+    const row = document.querySelector(`[data-id="${id}"]`).closest('tr');
+    await animateDeleteRow(row);
+    
+    try {
+        const response = await fetch(`/api/groups/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Группа успешно удалена');
+            row.remove();
+            
+            // Проверяем, нужно ли удалить заголовок типа группы
+            const nextRow = row.nextElementSibling;
+            if (nextRow && nextRow.classList.contains('group-type-header')) {
+                const prevRow = row.previousElementSibling;
+                if (!prevRow || prevRow.classList.contains('group-type-header')) {
+                    nextRow.remove();
+                }
+            }
+        } else {
+            const data = await response.json();
+            showToast(data.detail || 'Ошибка при удалении группы', 'error');
+            row.classList.remove('animate__animated', 'animate__fadeOutLeft');
+        }
+    } catch (error) {
+        console.error('Error deleting group:', error);
+        showToast('Ошибка при удалении группы', 'error');
+        row.classList.remove('animate__animated', 'animate__fadeOutLeft');
+    }
+}
+
+// Загружаем группы при загрузке страницы
+document.addEventListener('DOMContentLoaded', loadGroups);
+</script>
+{% endblock %}
+
+{% include 'footer.html' %}

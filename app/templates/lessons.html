@@ -1,0 +1,614 @@
+{% include 'header.html' %}
+
+<!-- Добавляем стили и скрипты Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Добавляем Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+{% block content %}
+<div class="container mt-4">
+    <a href="/" class="btn btn-info mb-3 text-white">На главную</a>
+    <h2>Управление дисциплинами</h2>
+    <!-- Форма добавления нового предмета -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Добавить новый предмет</h5>
+            <form id="addLessonForm">
+                <div class="mb-3">
+                    <label for="lessonName" class="form-label">Название предмета:</label>
+                    <input type="text" class="form-control" id="lessonName" placeholder="Например: Математика" required>
+                </div>
+                <div class="mb-3">
+                    <label for="teacherId" class="form-label">Преподаватель:</label>
+                    <select class="form-control select2" id="teacherId" required>
+                        <option value="">Выберите преподавателя</option>
+                        {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить предмет</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблица предметов -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Список предметов</h5>
+            
+            <!-- Поле поиска -->
+            <div class="mb-3">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Поиск по названию предмета или преподавателю...">
+                    <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="teacher">
+                                Преподаватель
+                                <span class="sort-icon">↕</span>
+                            </th>
+                            <th class="sortable" data-sort="name">
+                                Название предмета
+                                <span class="sort-icon">↕</span>
+                            </th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lessonsTableBody">
+                        {% set current_letter = '' %}
+                        {% for lesson in lessons|sort(attribute='teacher.name') %}
+                            {% set first_letter = lesson.teacher.name|first|upper %}
+                            {% if first_letter != current_letter %}
+                                <tr class="group-header">
+                                    <td colspan="3" class="bg-light fw-bold">
+                                        {{ first_letter }}
+                                    </td>
+                                </tr>
+                                {% set current_letter = first_letter %}
+                            {% endif %}
+                            <tr class="lesson-row">
+                                <td class="teacher-name">{{ lesson.teacher.name }}</td>
+                                <td class="lesson-name">{{ lesson.name }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2 edit-lesson" 
+                                            data-id="{{ lesson.id }}" 
+                                            data-name="{{ lesson.name }}" 
+                                            data-teacher-id="{{ lesson.teacher_id }}">
+                                        Редактировать
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-lesson" data-id="{{ lesson.id }}">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div class="modal fade" id="editLessonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать предмет</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editLessonForm">
+                    <input type="hidden" id="editLessonId">
+                    <div class="mb-3">
+                        <label for="editLessonName" class="form-label">Название предмета:</label>
+                        <input type="text" class="form-control" id="editLessonName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTeacherId" class="form-label">Преподаватель:</label>
+                        <select class="form-control select2" id="editTeacherId" required>
+                            <option value="">Выберите преподавателя</option>
+                            {% for teacher in teachers %}
+                                <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveLessonEdit">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sortable {
+        cursor: pointer;
+        position: relative;
+    }
+    .sort-icon {
+        margin-left: 5px;
+        font-size: 0.8em;
+    }
+    .sort-active .sort-icon {
+        color: #0d6efd;
+    }
+    .sort-asc .sort-icon:after {
+        content: "↑";
+    }
+    .sort-desc .sort-icon:after {
+        content: "↓";
+    }
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+    .hidden-row {
+        display: none;
+    }
+
+    /* Стили для Select2 */
+    .select2-container {
+        width: 100% !important;
+    }
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        /* line-height: 38px !important; */
+        padding-left: 12px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px !important;
+    }
+    .select2-container--default .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
+    .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #0d6efd;
+    }
+
+    /* Стили для Select2 в модальном окне */
+    .modal-open .select2-container {
+        z-index: 9999;
+    }
+    .modal-open .select2-dropdown {
+        z-index: 9999;
+    }
+
+    /* Стили для групповых заголовков */
+    .group-header td {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .group-header td:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .group-header td:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+
+    /* Стили для анимаций */
+    .fade-enter {
+        animation: fadeIn 0.5s;
+    }
+    
+    .fade-leave {
+        animation: fadeOut 0.5s;
+    }
+    
+    .slide-enter {
+        animation: slideInRight 0.5s;
+    }
+    
+    .slide-leave {
+        animation: slideOutRight 0.5s;
+    }
+    
+    .bounce-enter {
+        animation: bounceIn 0.5s;
+    }
+    
+    .bounce-leave {
+        animation: bounceOut 0.5s;
+    }
+    
+    /* Стили для уведомлений */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 4px;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+    }
+    
+    .toast.success {
+        border-left: 4px solid #28a745;
+    }
+    
+    .toast.error {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast-content {
+        margin-right: 15px;
+    }
+    
+    .toast-close {
+        cursor: pointer;
+        color: #6c757d;
+    }
+
+    /* Анимации для предметов */
+    .lesson-row {
+        animation: fadeIn 0.5s;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+<script>
+// Функция для показа уведомлений
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type} animate__animated animate__fadeInRight`;
+    toast.innerHTML = `
+        <div class="toast-content">${message}</div>
+        <div class="toast-close">&times;</div>
+    `;
+    
+    const container = document.querySelector('.toast-container') || (() => {
+        const cont = document.createElement('div');
+        cont.className = 'toast-container';
+        document.body.appendChild(cont);
+        return cont;
+    })();
+    
+    container.appendChild(toast);
+    
+    // Обработчик закрытия
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+        toast.classList.remove('animate__fadeInRight');
+        toast.classList.add('animate__fadeOutRight');
+        setTimeout(() => toast.remove(), 300);
+    });
+    
+    // Автоматическое закрытие через 3 секунды
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.classList.remove('animate__fadeInRight');
+            toast.classList.add('animate__fadeOutRight');
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 3000);
+}
+
+// Функция для анимации удаления строки
+function animateDeleteRow(row) {
+    row.classList.add('animate__animated', 'animate__fadeOutLeft');
+    return new Promise(resolve => setTimeout(resolve, 300));
+}
+
+// Функция для добавления обработчиков событий к строке
+function addEventListenersToRow(row) {
+    const editButton = row.querySelector('.edit-lesson');
+    const deleteButton = row.querySelector('.delete-lesson');
+    
+    editButton.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const name = this.getAttribute('data-name');
+        const teacherId = this.getAttribute('data-teacher-id');
+        
+        document.getElementById('editLessonId').value = id;
+        document.getElementById('editLessonName').value = name;
+        document.getElementById('editTeacherId').value = teacherId;
+        
+        const modal = new bootstrap.Modal(document.getElementById('editLessonModal'));
+        animateModal(modal, 'show');
+        modal.show();
+    });
+    
+    deleteButton.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        deleteLesson(id);
+    });
+}
+
+// Добавление нового предмета
+document.getElementById('addLessonForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('lessonName').value;
+    const teacherId = document.getElementById('teacherId').value;
+    
+    try {
+        const response = await fetch('/new_lesson/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                teacher: teacherId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Предмет успешно добавлен');
+            document.getElementById('addLessonForm').reset();
+            location.reload(); // Перезагружаем страницу для обновления списка
+        } else {
+            showToast(data.detail || 'Ошибка при добавлении предмета', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding lesson:', error);
+        showToast('Ошибка при добавлении предмета', 'error');
+    }
+});
+
+// Редактирование предмета
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для кнопок редактирования
+    document.querySelectorAll('.edit-lesson').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const teacherId = this.getAttribute('data-teacher-id');
+            
+            document.getElementById('editLessonId').value = id;
+            document.getElementById('editLessonName').value = name;
+            
+            // Инициализируем Select2 для поля выбора преподавателя
+            $('#editTeacherId').val(teacherId).trigger('change');
+            
+            const modal = new bootstrap.Modal(document.getElementById('editLessonModal'));
+            modal.show();
+        });
+    });
+    
+    // Обработчик для кнопок удаления
+    document.querySelectorAll('.delete-lesson').forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            deleteLesson(id);
+        });
+    });
+    
+    // Инициализация сортировки
+    initSorting();
+    
+    // Инициализация поиска
+    initSearch();
+});
+
+// Сохранение изменений предмета
+document.getElementById('saveLessonEdit').addEventListener('click', async () => {
+    const id = document.getElementById('editLessonId').value;
+    const name = document.getElementById('editLessonName').value;
+    const teacherId = document.getElementById('editTeacherId').value;
+    
+    try {
+        const response = await fetch(`/lessons/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                teacher: teacherId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Предмет успешно обновлен');
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editLessonModal'));
+            modal.hide();
+            location.reload(); // Перезагружаем страницу для обновления списка
+        } else {
+            showToast(data.detail || 'Ошибка при обновлении предмета', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating lesson:', error);
+        showToast('Ошибка при обновлении предмета', 'error');
+    }
+});
+
+// Удаление предмета
+async function deleteLesson(id) {
+    if (!confirm('Вы уверены, что хотите удалить этот предмет?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/lessons/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Предмет успешно удален');
+            location.reload(); // Перезагружаем страницу для обновления списка
+        } else {
+            const data = await response.json();
+            showToast(data.detail || 'Ошибка при удалении предмета', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting lesson:', error);
+        showToast('Ошибка при удалении предмета', 'error');
+    }
+}
+
+// Функция инициализации поиска
+function initSearch() {
+    const searchInput = document.getElementById('searchInput');
+    const clearButton = document.getElementById('clearSearch');
+    
+    // Обработчик ввода в поле поиска
+    searchInput.addEventListener('input', function() {
+        filterTable(this.value);
+    });
+    
+    // Обработчик кнопки очистки поиска
+    clearButton.addEventListener('click', function() {
+        searchInput.value = '';
+        filterTable('');
+    });
+}
+
+// Функция фильтрации таблицы
+function filterTable(query) {
+    const rows = document.querySelectorAll('.lesson-row');
+    const normalizedQuery = query.toLowerCase().trim();
+    
+    rows.forEach(row => {
+        const lessonName = row.querySelector('.lesson-name').textContent.toLowerCase();
+        const teacherName = row.querySelector('.teacher-name').textContent.toLowerCase();
+        
+        if (lessonName.includes(normalizedQuery) || teacherName.includes(normalizedQuery)) {
+            row.classList.remove('hidden-row');
+        } else {
+            row.classList.add('hidden-row');
+        }
+    });
+}
+
+// Функция инициализации сортировки
+function initSorting() {
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    let currentSort = {
+        column: null,
+        direction: 'asc'
+    };
+    
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const sortColumn = header.getAttribute('data-sort');
+            
+            // Определяем направление сортировки
+            if (currentSort.column === sortColumn) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = sortColumn;
+                currentSort.direction = 'asc';
+            }
+            
+            // Обновляем иконки сортировки
+            sortableHeaders.forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc', 'sort-active');
+            });
+            header.classList.add('sort-active', `sort-${currentSort.direction}`);
+            
+            // Сортируем таблицу
+            sortTable(sortColumn, currentSort.direction);
+        });
+    });
+    
+    // Устанавливаем сортировку по умолчанию по имени преподавателя
+    const teacherHeader = document.querySelector('.sortable[data-sort="teacher"]');
+    if (teacherHeader) {
+        teacherHeader.classList.add('sort-active', 'sort-asc');
+        sortTable('teacher', 'asc');
+    }
+}
+
+// Функция сортировки таблицы
+function sortTable(column, direction) {
+    const tableBody = document.getElementById('lessonsTableBody');
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    const lessonRows = rows.filter(row => row.classList.contains('lesson-row'));
+    const groupHeaders = rows.filter(row => row.classList.contains('group-header'));
+    
+    // Определяем индекс колонки для сортировки
+    const columnIndex = column === 'name' ? 1 : 0;
+    
+    // Сортируем строки
+    lessonRows.sort((a, b) => {
+        const aValue = a.cells[columnIndex].textContent.trim();
+        const bValue = b.cells[columnIndex].textContent.trim();
+        
+        if (direction === 'asc') {
+            return aValue.localeCompare(bValue, 'ru');
+        } else {
+            return bValue.localeCompare(aValue, 'ru');
+        }
+    });
+    
+    // Очищаем таблицу
+    tableBody.innerHTML = '';
+    
+    // Добавляем отсортированные строки с групповыми заголовками
+    let currentLetter = '';
+    lessonRows.forEach(row => {
+        const value = row.cells[columnIndex].textContent.trim();
+        const firstLetter = value.charAt(0).toUpperCase();
+        
+        if (firstLetter !== currentLetter) {
+            const headerRow = document.createElement('tr');
+            headerRow.className = 'group-header';
+            headerRow.innerHTML = `<td colspan="3" class="bg-light fw-bold">${firstLetter}</td>`;
+            tableBody.appendChild(headerRow);
+            currentLetter = firstLetter;
+        }
+        
+        tableBody.appendChild(row);
+    });
+}
+
+// Инициализация Select2 для полей выбора преподавателя
+$(document).ready(function() {
+    $('.select2').select2({
+        placeholder: "Выберите преподавателя",
+        allowClear: true,
+        language: {
+            noResults: function() {
+                return "Преподаватель не найден";
+            },
+            searching: function() {
+                return "Поиск...";
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% include 'footer.html' %}

@@ -1,0 +1,515 @@
+{% include 'header.html' %}
+
+<style>
+    .coupNadChertoi, .coupPodChertoi {
+        height: 100px;
+    }
+    .edit-icon {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        cursor: pointer;
+        color: #007bff;
+        font-size: 14px;
+        z-index: 2;
+    }
+    .add-icon {
+        cursor: pointer;
+        color: #28a745;
+        font-size: 28px;
+        margin: 6px 0;
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        text-align: center;
+    }
+    .lessonCellView {
+        position: relative;
+        min-height: 32px;
+        padding-right: 18px;
+    }
+    .divForLesson{
+        height: 200px;
+    }
+</style>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Просмотр расписания</h1>
+        <a href="/ready_schedule" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Назад к списку
+        </a>
+    </div>
+
+    <!-- Информация о расписании -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title" id="scheduleName"></h5>
+                    <p class="card-text">
+                        <strong>Тип группы:</strong> <span id="groupType"></span><br>
+                        <strong>Тип расписания:</strong> <span id="scheduleType"></span><br>
+                        <strong>Период:</strong> <span id="schedulePeriod"></span>
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-primary" onclick="printSchedule()">
+                        <i class="fas fa-print"></i> Печать
+                    </button>
+                    <button class="btn btn-success ms-2" onclick="downloadExcel()">
+                        <i class="fas fa-file-excel"></i> Сохранить в Excel
+                    </button>
+                    <button class="btn btn-danger ms-2" onclick="downloadPDF()">
+                        <i class="fas fa-file-pdf"></i> Сохранить в PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица расписания -->
+<div id="scheduleTable" class="mt-4"></div>
+
+<!-- Модальное окно для добавления/редактирования урока -->
+<div class="modal fade" id="lessonModal" tabindex="-1" aria-labelledby="lessonModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lessonModalLabel">Редактирование урока</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="lessonSelect" class="form-label">Предмет</label>
+                    <select class="form-select" id="lessonSelect">
+                        <option value="" selected>Выберите предмет</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="lessonTypeSelect" class="form-label">Тип занятия</label>
+                    <select class="form-select" id="lessonTypeSelect">
+                        <option value="lecture">Лекция</option>
+                        <option value="practice">Практика</option>
+                        <option value="test">Зачет</option>
+                        <option value="exam">Экзамен</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="roomSelect" class="form-label">Кабинет</label>
+                    <select class="form-select" id="roomSelect">
+                        <option value="" selected>Выберите кабинет</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveLessonBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    let groups = [];
+    let schedule = null;
+    let lessons = [];
+    let lessonsWithTeachers = [];
+    let rooms = [];
+    let currentEdit = null; // {lessonObj, groupId, lessonNumber, day, isAboveLine, dateStr, dayOfWeek, lessonId}
+
+    async function loadLessonsWithTeachers() {
+        const response = await fetch('/api/lessons-with-teachers');
+        if (!response.ok) return [];
+        lessonsWithTeachers = await response.json();
+    }
+    async function loadRooms() {
+        const response = await fetch('/api/rooms');
+        if (!response.ok) return [];
+        rooms = await response.json();
+    }
+
+    async function loadSchedule() {
+        try {
+            const scheduleId = window.location.pathname.split('/').pop();
+            const response = await fetch(`/api/schedule-templates/${scheduleId}`);
+            if (!response.ok) throw new Error('Ошибка при загрузке данных');
+            schedule = await response.json();
+            displayScheduleInfo(schedule);
+
+            const groupsResp = await fetch('/api/groups');
+            if (!groupsResp.ok) throw new Error('Ошибка при загрузке групп');
+            const allGroups = await groupsResp.json();
+            groups = allGroups.filter(g => g.type === schedule.group_type);
+
+            const lessonsResp = await fetch(`/api/schedules?template_id=${scheduleId}`);
+            if (!lessonsResp.ok) throw new Error('Ошибка при загрузке занятий');
+            lessons = await lessonsResp.json();
+
+            await loadLessonsWithTeachers();
+            await loadRooms();
+
+            buildScheduleTable();
+        } catch (error) {
+            console.error('Ошибка при загрузке расписания:', error);
+            alert('Ошибка при загрузке расписания');
+        }
+    }
+
+    function displayScheduleInfo(schedule) {
+        document.getElementById('scheduleName').textContent = schedule.name;
+        document.getElementById('groupType').textContent = schedule.group_type;
+        const scheduleTypeText = {
+            'regular': 'Обычное расписание',
+            'exam': 'Экзаменационная неделя',
+            'test': 'Зачетная неделя'
+        }[schedule.schedule_type];
+        document.getElementById('scheduleType').textContent = scheduleTypeText;
+        if (schedule.is_full_semester) {
+            document.getElementById('schedulePeriod').textContent = 'Расписание на весь семестр';
+        } else {
+            const startDate = new Date(schedule.date_start);
+            const endDate = new Date(schedule.date_end);
+            document.getElementById('schedulePeriod').textContent = `${formatDate(startDate)} - ${formatDate(endDate)}`;
+        }
+    }
+
+    function buildScheduleTable() {
+        const scheduleContainer = document.getElementById('scheduleTable');
+        scheduleContainer.innerHTML = '';
+        if (!groups.length) {
+            scheduleContainer.innerHTML = '<div class="alert alert-warning">Нет групп для этого типа.</div>';
+            return;
+        }
+        const table = document.createElement('table');
+        table.className = 'mainTable table-bordered';
+
+        // Шапка
+        const headerRow = document.createElement('tr');
+        let leftUpCell = document.createElement('th');
+        leftUpCell.className = 'dateCell';
+        headerRow.appendChild(leftUpCell);
+        headerRow.appendChild(document.createElement('th'));
+        groups.forEach(group => {
+            const th = document.createElement('th');
+            th.className = 'groupCell text-center';
+            th.innerText = group.name;
+            th.setAttribute('data-group-id', group.id);
+            headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+
+        // Дни/даты
+        const daysOfWeek = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+        let daysCount = 6;
+        let dateList = [];
+        if (schedule.is_full_semester) {
+            daysCount = 6;
+        } else {
+            const start = new Date(schedule.date_start);
+            const end = new Date(schedule.date_end);
+            daysCount = Math.ceil((end - start) / (1000 * 3600 * 24)) + 1;
+            for (let i = 0; i < daysCount; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                dateList.push(new Date(d));
+            }
+        }
+
+        for (let day = 0; day < daysCount; day++) {
+            const row = document.createElement('tr');
+            // Первая ячейка: день недели или дата
+            const dateCell = document.createElement('td');
+            dateCell.className = 'dateCell text-center';
+            let dateStr = '';
+            if (schedule.is_full_semester) {
+                dateCell.innerText = daysOfWeek[day];
+                dateStr = '';
+            } else {
+                dateCell.innerText = formatDate(dateList[day]);
+                dateStr = formatDate(dateList[day]);
+            }
+            row.appendChild(dateCell);
+
+            // Вторая ячейка: номера пар
+            const lessonNumberCell = document.createElement('td');
+            lessonNumberCell.className = 'coupleCell';
+            for (let lesson = 1; lesson <= 7; lesson++) {
+                const divForLesson = document.createElement('div');
+                divForLesson.className = 'divForLesson text-center align-middle';
+                divForLesson.innerText = lesson;
+                lessonNumberCell.appendChild(divForLesson);
+            }
+            row.appendChild(lessonNumberCell);
+
+            // Ячейки по группам
+            groups.forEach(group => {
+                const cell = document.createElement('td');
+                cell.className = 'mainTd';
+                for (let lesson = 1; lesson <= 7; lesson++) {
+                    const mainCell = document.createElement('div');
+                    mainCell.className = 'mainCell text-center';
+
+                    const coupNadChertoi = document.createElement('div');
+                    coupNadChertoi.className = 'coupNadChertoi align-middle text-center';
+                    const coupPodChertoi = document.createElement('div');
+                    coupPodChertoi.className = 'coupPodChertoi align-middle text-center';
+
+                    let cellLessons = [];
+                    if (schedule.is_full_semester) {
+                        cellLessons = lessons.filter(l => l.group_id === group.id && l.lesson_number === lesson && l.day_of_week === day + 1);
+                    } else {
+                        const dateStrLocal = formatDate(dateList[day]);
+                        cellLessons = lessons.filter(l => l.group_id === group.id && l.lesson_number === lesson && l.date === dateStrLocal);
+                    }
+                    const lessonsNad = cellLessons.filter(l => l.is_above_line);
+                    const lessonsPod = cellLessons.filter(l => !l.is_above_line);
+
+                    // Над чертой (только один div)
+                    const nadDiv = document.createElement('div');
+                    nadDiv.className = 'lessonCellView';
+                    const lessonNad = lessonsNad[0];
+                    if (lessonNad) {
+                        const lessonTypeText = {
+                            'lecture': 'Лекция',
+                            'practice': 'Практика',
+                            'test': 'Зачет',
+                            'exam': 'Экзамен'
+                        }[lessonNad.lesson_type] || '';
+                        nadDiv.innerHTML = `<strong>${lessonNad.lesson.name}</strong> (${lessonTypeText})<br>${lessonNad.teacher.name}<br>Ауд. ${lessonNad.room.number}`;
+                        const editIcon = document.createElement('span');
+                        editIcon.className = 'edit-icon';
+                        editIcon.innerHTML = '<i class="fas fa-pen"></i>';
+                        editIcon.onclick = () => openLessonModal(lessonNad, group.id, lesson, day, true, dateStr);
+                        nadDiv.appendChild(editIcon);
+                        // Добавляем иконку удаления
+                        const deleteIcon = document.createElement('span');
+                        deleteIcon.className = 'edit-icon';
+                        deleteIcon.style.right = '22px';
+                        deleteIcon.style.color = '#dc3545';
+                        deleteIcon.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteIcon.onclick = () => deleteLesson(lessonNad.id);
+                        nadDiv.appendChild(deleteIcon);
+                    } else {
+                        const addIcon = document.createElement('span');
+                        addIcon.className = 'add-icon';
+                        addIcon.innerHTML = '<i class="fas fa-plus"></i>';
+                        addIcon.onclick = () => openLessonModal(null, group.id, lesson, day, true, dateStr);
+                        nadDiv.appendChild(addIcon);
+                    }
+                    coupNadChertoi.appendChild(nadDiv);
+
+                    // Под чертой (только один div)
+                    const podDiv = document.createElement('div');
+                    podDiv.className = 'lessonCellView';
+                    const lessonPod = lessonsPod[0];
+                    if (lessonPod) {
+                        const lessonTypeText = {
+                            'lecture': 'Лекция',
+                            'practice': 'Практика',
+                            'test': 'Зачет',
+                            'exam': 'Экзамен'
+                        }[lessonPod.lesson_type] || '';
+                        podDiv.innerHTML = `<strong>${lessonPod.lesson.name}</strong> (${lessonTypeText})<br>${lessonPod.teacher.name}<br>Ауд. ${lessonPod.room.number}`;
+                        const editIconPod = document.createElement('span');
+                        editIconPod.className = 'edit-icon';
+                        editIconPod.innerHTML = '<i class="fas fa-pen"></i>';
+                        editIconPod.onclick = () => openLessonModal(lessonPod, group.id, lesson, day, false, dateStr);
+                        podDiv.appendChild(editIconPod);
+                        const deleteIconPod = document.createElement('span');
+                        deleteIconPod.className = 'edit-icon';
+                        deleteIconPod.style.right = '22px';
+                        deleteIconPod.style.color = '#dc3545';
+                        deleteIconPod.innerHTML = '<i class="fas fa-trash"></i>';
+                        deleteIconPod.onclick = () => deleteLesson(lessonPod.id);
+                        podDiv.appendChild(deleteIconPod);
+                    } else {
+                        const addIcon = document.createElement('span');
+                        addIcon.className = 'add-icon';
+                        addIcon.innerHTML = '<i class="fas fa-plus"></i>';
+                        addIcon.onclick = () => openLessonModal(null, group.id, lesson, day, false, dateStr);
+                        podDiv.appendChild(addIcon);
+                    }
+                    coupPodChertoi.appendChild(podDiv);
+
+                    mainCell.appendChild(coupNadChertoi);
+                    mainCell.appendChild(coupPodChertoi);
+                    cell.appendChild(mainCell);
+                }
+                row.appendChild(cell);
+            });
+            table.appendChild(row);
+        }
+        scheduleContainer.appendChild(table);
+    }
+
+    function openLessonModal(lessonObj, groupId, lessonNumber, day, isAboveLine, dateStr) {
+        // Заполняем селекты
+        const lessonSelect = document.getElementById('lessonSelect');
+        lessonSelect.innerHTML = '<option value="" selected>Выберите предмет</option>';
+        lessonsWithTeachers.forEach(lesson => {
+            const option = document.createElement('option');
+            option.value = lesson.id;
+            option.textContent = `${lesson.name} (${lesson.teacher_name})`;
+            option.setAttribute('data-teacher-id', lesson.teacher_id);
+            lessonSelect.appendChild(option);
+        });
+        const roomSelect = document.getElementById('roomSelect');
+        roomSelect.innerHTML = '<option value="" selected>Выберите кабинет</option>';
+        rooms.forEach(room => {
+            const option = document.createElement('option');
+            option.value = room.id;
+            option.textContent = `${room.number} (${room.capacity} мест)`;
+            roomSelect.appendChild(option);
+        });
+        // Тип занятия
+        document.getElementById('lessonTypeSelect').value = lessonObj ? lessonObj.lesson_type : 'lecture';
+        lessonSelect.value = lessonObj ? lessonObj.lesson.id : '';
+        roomSelect.value = lessonObj ? lessonObj.room.id : '';
+
+        currentEdit = {lessonObj, groupId, lessonNumber, day, isAboveLine, dateStr, lessonId: lessonObj ? lessonObj.id : null};
+        const modal = new bootstrap.Modal(document.getElementById('lessonModal'));
+        modal.show();
+    }
+
+    document.getElementById('saveLessonBtn').onclick = async function() {
+        const lessonSelect = document.getElementById('lessonSelect');
+        const roomSelect = document.getElementById('roomSelect');
+        const lessonTypeSelect = document.getElementById('lessonTypeSelect');
+        if (!lessonSelect.value || !roomSelect.value) {
+            alert('Пожалуйста, выберите предмет и кабинет');
+            return;
+        }
+        const selectedLesson = lessonsWithTeachers.find(l => l.id == lessonSelect.value);
+        const selectedRoom = rooms.find(r => r.id == roomSelect.value);
+        if (!selectedLesson || !selectedRoom) {
+            alert('Ошибка: предмет или кабинет не найден');
+            return;
+        }
+        // Формируем данные для запроса
+        let payload = {
+            template_id: schedule.id,
+            group_id: currentEdit.groupId,
+            lesson_id: parseInt(selectedLesson.id),
+            teacher_id: parseInt(selectedLesson.teacher_id),
+            room_id: selectedRoom.id,
+            lesson_number: currentEdit.lessonNumber,
+            is_above_line: currentEdit.isAboveLine,
+            lesson_type: lessonTypeSelect.value
+        };
+        if (!schedule.is_full_semester) {
+            payload.date = currentEdit.dateStr;
+        } else {
+            payload.day_of_week = currentEdit.day + 1;
+        }
+        let url = '/api/schedule';
+        let method = currentEdit.lessonId ? 'PUT' : 'POST';
+        if (currentEdit.lessonId) {
+            url += `/${currentEdit.lessonId}`;
+        }
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Ошибка при сохранении');
+            }
+            // После сохранения — обновить таблицу
+            const modal = bootstrap.Modal.getInstance(document.getElementById('lessonModal'));
+            modal.hide();
+            await loadSchedule();
+        } catch (error) {
+            alert(error.message || 'Ошибка при сохранении');
+        }
+    };
+
+    function formatDate(date) {
+        if (typeof date === 'string') date = new Date(date);
+        return date.toISOString().split('T')[0];
+    }
+
+    function printSchedule() {
+        window.print();
+    }
+
+    function deleteLesson(lessonId) {
+        if (!confirm('Удалить это занятие?')) return;
+        fetch(`/api/schedule/${lessonId}`, {
+            method: 'DELETE'
+        })
+        .then(res => {
+            if (!res.ok) throw new Error('Ошибка при удалении');
+            return res.json();
+        })
+        .then(() => loadSchedule())
+        .catch(err => alert(err.message || 'Ошибка при удалении'));
+    }
+
+    function downloadExcel() {
+        const scheduleId = window.location.pathname.split('/').pop();
+        fetch(`/api/schedule-templates/${scheduleId}/export_excel`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка при экспорте');
+                // Получаем имя файла из заголовка Content-Disposition
+                let filename = `schedule_${scheduleId}.xlsx`;
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    filename = disposition
+                        .split('filename=')[1]
+                        .split(';')[0]
+                        .replace(/['"]/g, '');
+                }
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(err => alert(err.message || 'Ошибка при экспорте в Excel'));
+    }
+
+    function downloadPDF() {
+        const scheduleId = window.location.pathname.split('/').pop();
+        fetch(`/api/schedule-templates/${scheduleId}/export_pdf`)
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка при экспорте');
+                // Получаем имя файла из заголовка Content-Disposition
+                let filename = `schedule_${scheduleId}.pdf`;
+                const disposition = response.headers.get('Content-Disposition');
+                if (disposition && disposition.indexOf('filename=') !== -1) {
+                    filename = disposition
+                        .split('filename=')[1]
+                        .split(';')[0]
+                        .replace(/['"]/g, '');
+                }
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(err => alert(err.message || 'Ошибка при экспорте в PDF'));
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSchedule);
+</script>
+{% endblock %}
+
+{% include 'footer.html' %} 

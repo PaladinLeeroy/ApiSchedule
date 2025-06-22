@@ -1,0 +1,336 @@
+{% include 'header.html' %}
+
+<!-- Добавляем Animate.css -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+{% block content %}
+<div class="container mt-4">
+    <a href="/" class="btn btn-info mb-3 text-white">На главную</a>
+    <h2>Управление преподавателями</h2>
+    <!-- Форма добавления нового преподавателя -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Добавить нового преподавателя</h5>
+            <form id="addTeacherForm">
+                <div class="mb-3">
+                    <label for="teacherName" class="form-label">ФИО преподавателя:</label>
+                    <input type="text" class="form-control" id="teacherName" placeholder="Например: Иванов Иван Иванович" required>
+                </div>
+                <div class="mb-3">
+                    <label for="teacherDesc" class="form-label">Описание:</label>
+                    <textarea class="form-control" id="teacherDesc" rows="2" placeholder="Год рождения, ученая степень (необязательно)"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Добавить преподавателя</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Таблица преподавателей -->
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Список преподавателей</h5>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            <th>Описание</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teachersTableBody">
+                        {% set letters = [] %}
+                        {% for teacher in teachers|sort(attribute='name') %}
+                            {% set first_letter = teacher.name.split()[0][0]|upper %}
+                            {% if first_letter not in letters %}
+                                {% set _ = letters.append(first_letter) %}
+                                <tr class="group-header">
+                                    <td colspan="3" class="bg-light fw-bold">
+                                        {{ first_letter }}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                            <tr class="teacher-row">
+                                <td>{{ teacher.name }}</td>
+                                <td>{{ teacher.description }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2 edit-teacher" 
+                                            data-id="{{ teacher.id }}" 
+                                            data-name="{{ teacher.name }}" 
+                                            data-description="{{ teacher.description }}">
+                                        Редактировать
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-teacher" data-id="{{ teacher.id }}">
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div class="modal fade" id="editTeacherModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Редактировать преподавателя</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTeacherForm">
+                    <input type="hidden" id="editTeacherId">
+                    <div class="mb-3">
+                        <label for="editTeacherName" class="form-label">ФИО преподавателя:</label>
+                        <input type="text" class="form-control" id="editTeacherName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editTeacherDesc" class="form-label">Описание:</label>
+                        <textarea class="form-control" id="editTeacherDesc" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveTeacherEdit">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Стили для уведомлений */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    .toast {
+        background: white;
+        border-radius: 4px;
+        padding: 15px 25px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 300px;
+    }
+    
+    .toast.success {
+        border-left: 4px solid #28a745;
+    }
+    
+    .toast.error {
+        border-left: 4px solid #dc3545;
+    }
+    
+    .toast-content {
+        margin-right: 15px;
+    }
+    
+    .toast-close {
+        cursor: pointer;
+        color: #6c757d;
+    }
+
+    /* Анимации для преподавателей */
+    .teacher-row {
+        animation: fadeIn 0.5s;
+    }
+
+    /* Стили для групповых заголовков */
+    .group-header td {
+        padding: 10px 15px;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .group-header td:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .group-header td:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+<script src="{{ url_for('static', path='js/animations.js') }}"></script>
+<script>
+// Добавление нового преподавателя
+document.getElementById('addTeacherForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('teacherName').value;
+    const description = document.getElementById('teacherDesc').value;
+    
+    try {
+        const response = await fetch('/new_teacher/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name,
+                description
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Преподаватель успешно добавлен');
+            document.getElementById('addTeacherForm').reset();
+            
+            // Анимация добавления новой строки
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${name}</td>
+                <td>${description}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary me-2 edit-teacher" 
+                            data-id="${data.id}" 
+                            data-name="${name}" 
+                            data-description="${description}">
+                        Редактировать
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-teacher" data-id="${data.id}">
+                        Удалить
+                    </button>
+                </td>
+            `;
+            document.getElementById('teachersTableBody').appendChild(newRow);
+            animateAddRow(newRow);
+            
+            // Добавляем обработчики для новых кнопок
+            addEventListenersToRow(newRow);
+        } else {
+            showToast(data.detail || 'Ошибка при добавлении преподавателя', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding teacher:', error);
+        showToast('Ошибка при добавлении преподавателя', 'error');
+    }
+});
+
+// Функция для добавления обработчиков событий к строке
+function addEventListenersToRow(row) {
+    const editButton = row.querySelector('.edit-teacher');
+    const deleteButton = row.querySelector('.delete-teacher');
+    
+    editButton.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const name = this.getAttribute('data-name');
+        const description = this.getAttribute('data-description');
+        
+        document.getElementById('editTeacherId').value = id;
+        document.getElementById('editTeacherName').value = name;
+        document.getElementById('editTeacherDesc').value = description;
+        
+        const modal = new bootstrap.Modal(document.getElementById('editTeacherModal'));
+        animateModal(modal, 'show');
+        modal.show();
+    });
+    
+    deleteButton.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        deleteTeacher(id);
+    });
+}
+
+// Редактирование преподавателя
+document.addEventListener('DOMContentLoaded', function() {
+    // Добавляем обработчики к существующим строкам
+    document.querySelectorAll('tr').forEach(row => {
+        if (row.querySelector('.edit-teacher')) {
+            addEventListenersToRow(row);
+        }
+    });
+});
+
+// Сохранение изменений преподавателя
+document.getElementById('saveTeacherEdit').addEventListener('click', async () => {
+    const id = document.getElementById('editTeacherId').value;
+    const name = document.getElementById('editTeacherName').value;
+    const description = document.getElementById('editTeacherDesc').value;
+    
+    try {
+        const response = await fetch(`/teachers/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name,
+                description
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('Преподаватель успешно обновлен');
+            
+            // Анимация обновления строки
+            const row = document.querySelector(`[data-id="${id}"]`).closest('tr');
+            await animateUpdateRow(row);
+            
+            // Обновляем данные в строке
+            row.cells[0].textContent = name;
+            row.cells[1].textContent = description;
+            row.querySelector('.edit-teacher').setAttribute('data-name', name);
+            row.querySelector('.edit-teacher').setAttribute('data-description', description);
+
+            // Закрываем модальное окно после обновления данных
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editTeacherModal'));
+            modal.hide();
+        } else {
+            showToast(data.detail || 'Ошибка при обновлении преподавателя', 'error');
+        }
+    } catch (error) {
+        console.error('Error updating teacher:', error);
+        showToast('Ошибка при обновлении преподавателя', 'error');
+    }
+});
+
+// Удаление преподавателя
+async function deleteTeacher(id) {
+    if (!confirm('Вы уверены, что хотите удалить этого преподавателя?')) {
+        return;
+    }
+    
+    const row = document.querySelector(`[data-id="${id}"]`).closest('tr');
+    await animateDeleteRow(row);
+    
+    try {
+        const response = await fetch(`/teacher/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Преподаватель успешно удален');
+            row.remove();
+        } else {
+            const data = await response.json();
+            showToast(data.detail || 'Ошибка при удалении преподавателя', 'error');
+            row.classList.remove('animate__animated', 'animate__fadeOutLeft');
+        }
+    } catch (error) {
+        console.error('Error deleting teacher:', error);
+        showToast('Ошибка при удалении преподавателя', 'error');
+        row.classList.remove('animate__animated', 'animate__fadeOutLeft');
+    }
+}
+</script>
+{% endblock %}
+
+{% include 'footer.html' %}

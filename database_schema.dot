@@ -1,0 +1,33 @@
+digraph DatabaseSchema {
+    // Настройка внешнего вида
+    graph [rankdir=LR, splines=ortho, nodesep=0.8];
+    node [shape=record, style=filled, fillcolor=lightblue, fontname="Arial"];
+    edge [fontname="Arial"];
+
+    // Определение узлов с полями
+    Schedule [label="{Schedule|id: Integer (PK)\n date: Date\n group_id: Integer (FK)\n lesson_id: Integer (FK)\n teacher_id: Integer (FK)\n room_id: Integer (FK)\n lesson_number: Integer\n is_above_line: Boolean\n lesson_type: String\n template_id: Integer (FK)\n day_of_week: Integer}"];
+
+    Groups [label="{Groups|id: Integer (PK)\n name: String (UQ)\n type: String\n description: String}"];
+
+    Lessons [label="{Lessons|id: Integer (PK)\n name: String\n teacher_id: Integer (FK)}"];
+
+    Teachers [label="{Teachers|id: Integer (PK)\n name: String\n description: String}"];
+
+    Rooms [label="{Rooms|id: Integer (PK)\n number: String (UQ)\n capacity: Integer\n description: String}"];
+
+    ScheduleTemplate [label="{ScheduleTemplate|id: Integer (PK)\n name: String (UQ)\n group_type: String\n date_start: Date\n date_end: Date\n created_at: DateTime\n description: String\n schedule_type: String\n is_full_semester: Boolean}"];
+
+    User [label="{User|id: Integer (PK)\n username: String (UQ)\n password_hash: String\n role: String\n is_active: Boolean\n created_at: DateTime}"];
+
+    // Определение связей
+    Schedule -> Groups [label="group_id"];
+    Schedule -> Lessons [label="lesson_id"];
+    Schedule -> Teachers [label="teacher_id"];
+    Schedule -> Rooms [label="room_id"];
+    Schedule -> ScheduleTemplate [label="template_id"];
+    Lessons -> Teachers [label="teacher_id"];
+
+    // Добавление подсказок
+    edge [color=blue];
+    node [shape=record, style=filled, fillcolor=lightblue];
+} 

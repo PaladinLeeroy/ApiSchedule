@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Перенаправление...</title>
+</head>
+<body>
+    <script>
+        // Получаем токен из URL параметров
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const role = urlParams.get('role');
+
+        if (token) {
+            // Сохраняем токен в localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('userRole', role);
+            
+            // Перенаправляем на главную страницу
+            window.location.href = '/';
+        } else {
+            // Если токена нет, перенаправляем на страницу входа
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html> 

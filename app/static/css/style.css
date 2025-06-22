@@ -1,0 +1,353 @@
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body{
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+.header{
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    /* padding: 20px 0; */
+    /* position: sticky; */
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar-nav li a{
+    color: #2c3e50;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.navbar-nav li a:hover {
+    color: #3498db;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+h1 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+.input_standart,
+.select_standart {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.input_standart:focus,
+.select_standart:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+.btn_standart {
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    transition: all 0.3s ease;
+}
+.btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+}
+.input_in_update_table{
+    width: 80%;
+}
+
+/* .mainTable{
+    width: 100%;
+} */
+/* .mainTd{
+    width: 200px;
+} */
+.mainTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1rem 0;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+.mainTable td,
+.mainTable th {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+.mainTable tr {
+    border: none;
+}
+.mainTable .mainCell {
+    padding: 0;
+    position: relative;
+}
+.mainTable .mainCell .lessonCell {
+    border-collapse: collapse;
+    /* border-left: 1px solid #000; */
+}
+.mainTable .mainCell .roomCell {
+    border-collapse: collapse;
+    /* border-left: 1px solid #000; */
+    border-bottom: 1px solid #666666;
+}
+.dateCell {
+    writing-mode: sideways-lr;
+    width: 50px;
+    font-weight: 600;
+    font-size: 1rem;
+    background-color: #f8f9fa;
+    color: #2c3e50;
+}
+/* .mainCell{
+    width: 200px;
+} */
+.coupPodChertoi {
+    background-color: #f0e7e6;
+}
+.coupleCell {
+    /* border: 2px solid #000; */
+    background-color: #f8f9fa;
+    width: 50px;
+    text-align: center;
+    font-weight: 600;
+    color: #2c3e50;
+}
+.divForLesson {
+    /* line-height: 6.1rem; */
+    height: calc(66px * 2);
+    padding-top: 52px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid #dee2e6;
+    color: #2c3e50;
+}
+.lessonCell {
+    position: relative;
+    padding: 0.5rem;
+    min-height: 30px;
+    font-size: 0.875rem;
+    line-height: 1.2;
+    background-color: #fff;
+    border-bottom: 1px solid #eee;
+}
+.edit-button {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.lessonCell:hover .edit-button {
+    opacity: 1;
+}
+.roomCell {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.2;
+    color: #666;
+    background-color: #f8f9fa;
+}
+.btnForCreateLesson {
+    width: 100%;
+    height: 100%;
+    border: 2px dashed #dee2e6;
+    background-color: transparent;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+.btnForCreateLesson:hover {
+    border-color: #3498db;
+    color: #3498db;
+    background-color: rgba(52, 152, 219, 0.1);
+}
+/* Стили для модального окна */
+.modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+/* Адаптивность */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .mainTable {
+        font-size: 0.875rem;
+    }
+    
+    .dateCell {
+        font-size: 0.875rem;
+    }
+    
+    .divForLesson {
+        font-size: 0.875rem;
+    }
+}
+.indexs_card_a{
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+.indexs_card_a .card{
+    height: 140px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: box-shadow 0.3s ease;
+}
+.indexs_card_a:hover {
+    transform: translateY(-5px);
+}
+.indexs_card_a:hover .card {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.indexs_card_a, .indexs_card_a i{
+    color: #2c3e50;
+}
+.indexs_card_a:hover i{
+    color: #3498db;
+}
+.card_i{
+    color: #2c3e50;
+}
+.card_i i{
+    padding-top: 45px;
+    font-size: 2rem;
+}
+.coupNadChertoi{
+    border-bottom: 1px solid #666666;
+    border-top: 1px solid #666666;
+}
+.lessonCellBeforeCreateLesson{
+    height: 66px;
+}
+.inputForLesson, .inputForCabs{
+    width: 80%;
+    height: 26px;
+    padding: 0rem 0.3rem;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    color: #212529;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #bdbdbd;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.inputForLesson::placeholder, .inputForCabs::placeholder {
+    color: #212529;
+    opacity: 0.4;
+}
+.inputForLesson:focus, .inputForCabs:focus {
+    color: #212529;
+    background-color: #fff;
+    border-color: #bdbdbd;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(158, 158, 158, 0.25);
+}
+
+
+.input_standart{
+    width: 100%;
+}
+
+/* Стили для Select2 */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single {
+    height: 38px;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    background-color: #fff;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 38px;
+    padding-left: 12px;
+    color: #212529;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+
+.select2-dropdown {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #3498db;
+    color: #fff;
+}
+
+/* Стили для Select2 в модальном окне */
+.modal-open .select2-container {
+    z-index: 9999 !important;
+}
+
+.modal-open .select2-dropdown {
+    z-index: 9999 !important;
+}
+
+/* Стили для контейнера выбранного преподавателя */
+#select2-teacherId-container {
+    background-color: #f8f9fa !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 0.375rem !important;
+    padding: 6px 12px !important;
+    color: #212529 !important;
+}
+
+#select2-teacherId-container:focus {
+    background-color: #fff !important;
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+/* Стили для placeholder */
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: #6c757d !important;
+}
+
+/* Стили для поиска */
+.select2-container--default .select2-search--dropdown {
+    padding: 8px !important;
+}
+
+.select2-container--default .select2-search--dropdown .select2-search__field:focus {
+    outline: none !important;
+    border-color: #86b7fe !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}

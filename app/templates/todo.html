@@ -1,0 +1,186 @@
+{% include 'header.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex align-items-center justify-content-between">
+                    <h4 class="mb-0"><i class="fa-solid fa-list-check me-2"></i>Список задач</h4>
+                </div>
+                <div class="card-body">
+                    <form id="todo-form" class="mb-4 d-flex">
+                        <input type="text" id="todo-input" class="form-control me-2" placeholder="Добавить новую задачу..." required>
+                        <button type="submit" class="btn btn-success"><i class="fa fa-plus"></i></button>
+                    </form>
+                    <ul id="todo-list" class="list-group">
+                        <!-- Список задач будет здесь -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        const form = document.getElementById('todo-form');
+        const input = document.getElementById('todo-input');
+        const list = document.getElementById('todo-list');
+        let errorDiv = document.getElementById('todo-error');
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.id = 'todo-error';
+            errorDiv.className = 'alert alert-danger mt-2 d-none';
+            form.parentNode.insertBefore(errorDiv, form.nextSibling);
+        }
+
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.classList.remove('d-none');
+        }
+        function hideError() {
+            errorDiv.classList.add('d-none');
+        }
+
+        async function loadTodos() {
+            list.innerHTML = '';
+            hideError();
+            try {
+                const res = await fetch('/api/todos');
+                if (res.ok) {
+                    const todos = await res.json();
+                    todos.forEach(todo => {
+                        list.appendChild(createTodoItem(todo));
+                    });
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    showError(data.detail || 'Ошибка загрузки задач');
+                    console.error('Ошибка загрузки задач', data);
+                }
+            } catch (e) {
+                showError('Ошибка соединения с сервером');
+                console.error(e);
+            }
+        }
+
+        function createTodoItem(todo) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item d-flex justify-content-between align-items-center';
+            if (todo.completed) li.classList.add('list-group-item-success');
+
+            const span = document.createElement('span');
+            span.textContent = todo.text;
+            if (todo.completed) span.style.textDecoration = 'line-through';
+
+            const btnGroup = document.createElement('div');
+            btnGroup.className = 'btn-group btn-group-sm';
+
+            const doneBtn = document.createElement('button');
+            doneBtn.className = 'btn btn-outline-success';
+            doneBtn.innerHTML = '<i class="fa fa-check"></i>';
+            doneBtn.title = 'Отметить как выполнено';
+            doneBtn.onclick = async function() {
+                await updateTodo(todo.id, { completed: !todo.completed });
+                await loadTodos();
+            };
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn btn-outline-danger';
+            delBtn.innerHTML = '<i class="fa fa-trash"></i>';
+            delBtn.title = 'Удалить';
+            delBtn.onclick = async function() {
+                if (confirm('Вы уверены, что хотите удалить эту задачу?')) {
+                    await deleteTodo(todo.id);
+                    await loadTodos();
+                }
+            };
+
+            btnGroup.appendChild(doneBtn);
+            btnGroup.appendChild(delBtn);
+            li.appendChild(span);
+            li.appendChild(btnGroup);
+            return li;
+        }
+
+        async function createTodo(text) {
+            try {
+                const res = await fetch('/api/todos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text })
+                });
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    showError(data.detail || 'Ошибка добавления задачи');
+                    console.error('Ошибка добавления задачи', data);
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                showError('Ошибка соединения с сервером');
+                console.error(e);
+                return false;
+            }
+        }
+
+        async function updateTodo(id, data) {
+            try {
+                const res = await fetch(`/api/todos/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                if (!res.ok) {
+                    const d = await res.json().catch(() => ({}));
+                    showError(d.detail || 'Ошибка обновления задачи');
+                    console.error('Ошибка обновления задачи', d);
+                }
+            } catch (e) {
+                showError('Ошибка соединения с сервером');
+                console.error(e);
+            }
+        }
+
+        async function deleteTodo(id) {
+            try {
+                const res = await fetch(`/api/todos/${id}`, {
+                    method: 'DELETE'
+                });
+                if (!res.ok) {
+                    const d = await res.json().catch(() => ({}));
+                    showError(d.detail || 'Ошибка удаления задачи');
+                    console.error('Ошибка удаления задачи', d);
+                }
+            } catch (e) {
+                showError('Ошибка соединения с сервером');
+                console.error(e);
+            }
+        }
+
+        form.onsubmit = async function(e) {
+            e.preventDefault();
+            hideError();
+            const text = input.value.trim();
+            if (text) {
+                const ok = await createTodo(text);
+                if (ok) {
+                    input.value = '';
+                    input.focus();
+                    await loadTodos();
+                }
+            }
+        };
+
+        await loadTodos();
+    });
+</script>
+{% endblock %}
+
+{% include 'footer.html' %} 

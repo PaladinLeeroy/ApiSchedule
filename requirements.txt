@@ -1,0 +1,15 @@
+fastapi[all]
+requests
+httpx
+bcrypt
+openpyxl
+reportlab
+jose[cryptography]
+passlib[bcrypt]
+python-multipart
+alembic
+uvicorn[standard]
+jinja2
+python-dotenv
+gunicorn
+psycopg2-binary

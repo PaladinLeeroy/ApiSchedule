@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/bootstrap.css">
+    <link rel="stylesheet" href="/static/css/all.css" />
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>Ошибка {{ error_code }} - СПИ расписание</title>
+</head>
+<body class="bg-light">
+    <div class="container">
+        <div class="row justify-content-center align-items-center min-vh-100">
+            <div class="col-md-6 text-center">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <h1 class="display-1 text-danger mb-4">{{ error_code }}</h1>
+                        <h2 class="mb-4">{{ error_message }}</h2>
+                        <a href="/" class="btn btn-primary">Вернуться на главную</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,214 @@
+{% include 'header.html' %}
+
+{% block content %}
+
+<div class="mainPage">
+    <div class="container">
+        <div class="indexs_block block_shadule">
+            <h3>Расписание</h3>
+            <div class="mt-3"></div>
+            <div class="row">
+                <a href="/new_schedule/" class="col-md-6 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-pen-ruler"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Перейти к созданию расписания</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <a href="/ready_schedule/" class="col-md-6 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-pen-to-square"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Просмотреть/изменить уже созданные расписания</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="mt-4"></div>
+            <h3>Данные</h3>
+            <div class="mt-3"></div>
+            <div class="row">
+                <a href="/group/" class="col-md-3 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-users"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Учебные группы</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <a href="/lessons/" class="col-md-3 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-tasks"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Дисциплины</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <a href="/teachers/" class="col-md-3 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-chalkboard-teacher"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Преподаватели</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <a href="/rooms/" class="col-md-3 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-door-open"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Кабинеты</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                <a href="/todo/" class="col-md-3 indexs_card_a">
+                    <div class="card mb-3">
+                        <div class="row g-0">
+                            <div class="col-md-3 text-center">
+                                <div class="card_i">
+                                    <i class="fa-solid fa-3x fa-list-check"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="card-body">
+                                    <h5 class="card-title">Список задач</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- <div class="mt-3"></div>
+        <a href="/new_schedule/"><button type="button" class="btn btn-success">Создать расписание</button></a>
+        <div class="mt-3"></div>
+        <a href="/group/"><button type="button" class="btn btn-success">Учебные группы</button></a>
+        <div class="mt-3"></div>
+        <a href="/lessons/sortBy=lessons"><button type="button" class="btn btn-success">Дисциплины</button></a>
+        <div class="mt-3"></div>
+        <a href="/teachers/"><button type="button" class="btn btn-success">Преподаватели</button></a> -->
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+    <script>
+        console.log(1)
+    </script>
+    
+{% endblock %}
+
+{% include 'footer.html' %}
+
+<style>
+    .indexs_card_a {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        display: inline-block;
+        text-decoration: none;
+        color: #333;
+        font-weight: 500;
+    }
+    
+    .indexs_card_a:hover {
+        color: #007bff;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .indexs_card_a:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .indexs_card_a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: #007bff;
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.3s ease;
+    }
+    
+    .indexs_card_a:hover::after {
+        transform: scaleX(1);
+        transform-origin: left;
+    }
+    
+    .indexs_card_a:active::after {
+        background-color: #0056b3;
+    }
+    
+    /* Добавим эффект пульсации при наведении */
+    @keyframes pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+        }
+    }
+    
+    .indexs_card_a:hover {
+        animation: pulse 1.5s infinite;
+    }
+</style>
