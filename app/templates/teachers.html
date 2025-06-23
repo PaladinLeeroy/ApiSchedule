@@ -174,7 +174,7 @@ document.getElementById('addTeacherForm').addEventListener('submit', async (e) =
     const description = document.getElementById('teacherDesc').value;
     
     try {
-        const response = await fetch('/new_teacher/', {
+        const response = await fetch('/new_teacher', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
